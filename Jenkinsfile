@@ -20,6 +20,15 @@ pipeline {
             sh 'cat trufflehogoutput'
           }
         }
+
+        stage ('Source Composition Analysis') {
+            steps {
+                sh 'rm owasp* || true'
+                sh 'wget https://github.com/cybermanish2023/DevSecOpsWebapp/blob/main/owasp-dependency-check1.sh'
+                sh 'chmod +x owasp-dependency-check1.sh'
+                sh 'bash owasp-dependency-check.sh'
+            }
+        }
         
         stage ('Build') {
             steps {
