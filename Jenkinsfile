@@ -25,20 +25,6 @@ pipeline {
                 }
             }
         }
-
-        stage ('Source Composition Analysis') {
-            steps {
-                script {
-                    // Remove any previous dependency check files
-                    sh 'rm -f owasp*'
-                    // Download the OWASP Dependency-Check script
-                    sh 'wget https://raw.githubusercontent.com/cybermanish2023/DevSecOpsWebapp/main/owasp-dependency-check1.sh -O owasp-dependency-check1.sh'
-                    // Make the script executable
-                    sh 'chmod +x owasp-dependency-check1.sh'
-                    // Execute the script
-                    sh './owasp-dependency-check1.sh'
-                }
-            }
         }
         
         stage ('Build') {
@@ -55,4 +41,3 @@ pipeline {
             }
         }
     }
-}
