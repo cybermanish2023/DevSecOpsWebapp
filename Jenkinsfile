@@ -14,19 +14,30 @@ pipeline {
         }
 
         stage ('Check-Git-Secrets') {
-          steps {
-            sh 'rm trufflehogoutput || true'
-            sh 'docker run trufflesecurity/trufflehog --json git https://github.com/cybermanish2023/DevSecOpsWebapp.git > trufflehogoutput '
-            sh 'cat trufflehogoutput'
-          }
+            steps {
+                script {
+                    // Ensure any previous output file is removed
+                    sh 'rm -f trufflehogoutput'
+                    // Run TruffleHog and redirect output to a file
+                    sh 'docker run --rm trufflesecurity/trufflehog --json git https://github.com/cybermanish2023/DevSecOpsWebapp.git > trufflehogoutput'
+                    // Display the content of the output file
+                    sh 'cat trufflehogoutput'
+                }
+            }
         }
 
         stage ('Source Composition Analysis') {
             steps {
-                sh 'rm owasp* || true'
-                sh 'wget https://raw.githubusercontent.com/cybermanish2023/DevSecOpsWebapp/main/owasp-dependency-check1.sh'
-                sh 'chmod +x owasp-dependency-check1.sh'
-                sh 'bash owasp-dependency-check1.sh'
+                script {
+                    // Remove any previous dependency check files
+                    sh 'rm -f owasp*'
+                    // Download the OWASP Dependency-Check script
+                    sh 'wget https://raw.githubusercontent.com/cybermanish2023/DevSecOpsWebapp/main/owasp-dependency-check1.sh -O owasp-dependency-check1.sh'
+                    // Make the script executable
+                    sh 'chmod +x owasp-dependency-check1.sh'
+                    // Execute the script
+                    sh './owasp-dependency-check1.sh'
+                }
             }
         }
         
@@ -35,6 +46,7 @@ pipeline {
                 sh 'mvn clean package'
             }
         }
+
         stage ('Deploy-To-Tomcat') {
             steps {
                 sshagent(['tomcat']) {
