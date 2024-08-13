@@ -14,17 +14,11 @@ pipeline {
         }
 
         stage ('Check-Git-Secrets') {
-            steps {
-                script {
-                    // Ensure any previous output file is removed
-                    sh 'rm -f trufflehogoutput'
-                    // Run TruffleHog and redirect output to a file
-                    sh 'docker run --rm trufflesecurity/trufflehog --json git https://github.com/cybermanish2023/DevSecOpsWebapp.git > trufflehogoutput'
-                    // Display the content of the output file
-                    sh 'cat trufflehogoutput'
-                }
-            }
-        }
+          steps {
+            sh 'rm trufflehogoutput || true'
+            sh 'docker run trufflesecurity/trufflehog --json git https://github.com/cybermanish2023/DevSecOpsWebapp.git > trufflehogoutput '
+            sh 'cat trufflehogoutput'
+          }
         }
         
         stage ('Build') {
@@ -32,7 +26,6 @@ pipeline {
                 sh 'mvn clean package'
             }
         }
-
         stage ('Deploy-To-Tomcat') {
             steps {
                 sshagent(['tomcat']) {
@@ -41,3 +34,4 @@ pipeline {
             }
         }
     }
+}
