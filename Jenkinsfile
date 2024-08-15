@@ -28,7 +28,16 @@ pipeline {
                 sh 'chmod +x owasp-dependency-check.sh'
                 sh 'bash owasp-dependency-check.sh --nvdApiKey aa67805d-fdc7-4072-994d-a5d7ce67ed96'
             }
-        }    
+        }  
+
+        stage ('SAST') {
+            steps {
+                withSonarQubeEnv('DevSecOps') {
+                    sh 'mvn sonar:sonar'
+                    sh 'cat target/sonar/report-task.txt
+                }
+            }
+        }
 
         stage ('Build') {
             steps {
