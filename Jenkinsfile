@@ -52,5 +52,20 @@ pipeline {
                 }
             }
         }
+
+        stage ('DAST') {
+            steps {
+                sh '''
+                echo "Pulling OWASP ZAP Docker Image"
+                docker pull owasp/zap2docker-stable
+                
+                echo "Starting OWASP ZAP DAST scan"
+                docker run --rm -v $(pwd):/zap/wrk:rw -t owasp/zap2docker-stable zap-baseline.py -t http://18.197.52.92:8080/webapp -r zap_report.html
+                echo "ZAP DAST scan completed"
+                '''
+                // Archive the report
+                archiveArtifacts artifacts: 'zap_report.html', fingerprint: true
+            }
+        }
     }
 }
