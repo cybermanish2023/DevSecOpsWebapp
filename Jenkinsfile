@@ -56,10 +56,11 @@ pipeline {
         stage ('DAST') {
             steps {
                 sh '''
-                echo "Pulling OWASP ZAP Docker Image"
+                echo "Pulling OWASP ZAP Docker Image from Docker Hub"
                 docker pull zaproxy/zap-stable
+                
                 echo "Starting OWASP ZAP DAST scan"
-                docker run --rm -v $(pwd):/zap/wrk:rw -t owasp/zap2docker-stable zap-baseline.py -t http://18.197.52.92:8080/webapp -r zap_report.html
+                docker run --rm -v $(pwd):/zap/wrk:rw -t zaproxy/zap-stable zap-baseline.py -t http://18.197.52.92:8080/webapp -r zap_report.html
                 echo "ZAP DAST scan completed"
                 '''
                 // Archive the report
