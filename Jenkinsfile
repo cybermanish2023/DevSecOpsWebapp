@@ -4,7 +4,7 @@ pipeline {
         maven 'Maven'
     }
     stages {
-        stage ('Initialize') {
+        stage('Initialize') {
             steps {
                 sh '''
                 echo "PATH = ${PATH}"
@@ -13,7 +13,7 @@ pipeline {
             }
         }
 
-        stage ('Check-Git-Secrets') {
+        stage('Check-Git-Secrets') {
             steps {
                 sh 'rm trufflehog || true'
                 sh 'docker run gesellix/trufflehog --json https://github.com/cybermanish2023/DevSecOpsWebapp.git > trufflehog'
@@ -21,16 +21,16 @@ pipeline {
             }
         }
 
-        stage ('Source Composition Analysis') {
+        stage('Source Composition Analysis') {
             steps {
                 sh 'rm owasp* || true'
-                sh 'wget "https://raw.githubusercontent.com/cybermanish2023/DevSecOpsWebapp/main/owasp-dependency-check.sh" '
+                sh 'wget "https://raw.githubusercontent.com/cybermanish2023/DevSecOpsWebapp/main/owasp-dependency-check.sh"'
                 sh 'chmod +x owasp-dependency-check.sh'
                 sh 'bash owasp-dependency-check.sh --nvdApiKey aa67805d-fdc7-4072-994d-a5d7ce67ed96'
             }
         }  
 
-        stage ('SAST') {
+        stage('SAST') {
             steps {
                 withSonarQubeEnv('sonar') {
                     sh 'mvn sonar:sonar'
@@ -39,13 +39,13 @@ pipeline {
             }
         }
 
-        stage ('Build') {
+        stage('Build') {
             steps {
                 sh 'mvn clean package'
             }
         }
 
-        stage ('Deploy-To-Tomcat') {
+        stage('Deploy-To-Tomcat') {
             steps {
                 sshagent(['tomcat']) {
                     sh 'scp -o StrictHostKeyChecking=no target/*.war ubuntu@18.197.52.92:/home/ubuntu/prod/apache-tomcat-10.1.28/webapps/webapp.war'
@@ -53,22 +53,24 @@ pipeline {
             }
         }
 
-        stage ('DAST') {
+        stage('DAST') {
             steps {
                 sh '''
                 echo "Pulling OWASP ZAP Docker Image from Docker Hub"
                 docker pull zaproxy/zap-stable
-                
+
                 echo "Starting OWASP ZAP DAST scan"
-                docker run --user root -v /var/lib/jenkins/workspace/DevSecOpsPipeline:/zap/wrk:rw -t zaproxy/zap-stable \
+                docker run --rm -u root -v $(pwd):/zap/wrk:rw -t zaproxy/zap-stable sh -c "
+                mkdir -p /zap/wrk && chmod -R 777 /zap/wrk &&
                 zap-baseline.py -t http://18.197.52.92:8080/webapp/ -r /zap/wrk/zap_report.html
+                "
                 echo "ZAP DAST scan completed"
                 '''
             }
         }
 
-        post {
-            always {
+        stage('Archive Report') {
+            steps {
                 archiveArtifacts artifacts: 'zap_report.html', fingerprint: true
             }
         }
