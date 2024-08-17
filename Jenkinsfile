@@ -24,7 +24,7 @@ pipeline {
         stage ('Source Composition Analysis') {
             steps {
                 sh 'rm owasp* || true'
-                sh 'wget "https://raw.githubusercontent.com/cybermanish2023/DevSecOpsWebapp/main/owasp-dependency-check.sh" '
+                sh 'wget "https://raw.githubusercontent.com/cybermanish2023/DevSecOpsWebapp/main/owasp-dependency-check.sh"'
                 sh 'chmod +x owasp-dependency-check.sh'
                 sh 'bash owasp-dependency-check.sh --nvdApiKey aa67805d-fdc7-4072-994d-a5d7ce67ed96'
             }
@@ -60,9 +60,10 @@ pipeline {
                 docker pull zaproxy/zap-stable
                 
                 echo "Starting OWASP ZAP DAST scan"
-                docker run -t zaproxy/zap-stable zap-baseline.py -t http://18.197.52.92:8080/webapp/ || true
+                docker run -v $(pwd):/zap/wrk:rw -t zaproxy/zap-stable zap-baseline.py -t http://18.197.52.92:8080/webapp/ -r /zap/wrk/zap_report.html || true
                 echo "ZAP DAST scan completed"
                 '''
+                archiveArtifacts artifacts: 'zap_report.html', fingerprint: true
             }
         }
     }
