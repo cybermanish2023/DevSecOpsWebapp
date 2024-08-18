@@ -4,7 +4,7 @@ pipeline {
         maven 'Maven'
     }
     stages {
-        stage ('Initialize') {
+        stage('Initialize') {
             steps {
                 sh '''
                 echo "PATH = ${PATH}"
@@ -13,7 +13,7 @@ pipeline {
             }
         }
 
-        stage ('Check-Git-Secrets') {
+        stage('Check-Git-Secrets') {
             steps {
                 sh 'rm trufflehog || true'
                 sh 'docker run gesellix/trufflehog --json https://github.com/cybermanish2023/DevSecOpsWebapp.git > trufflehog'
@@ -21,7 +21,7 @@ pipeline {
             }
         }
 
-        stage ('Source Composition Analysis') {
+        stage('Source Composition Analysis') {
             steps {
                 sh 'rm owasp* || true'
                 sh 'wget "https://raw.githubusercontent.com/cybermanish2023/DevSecOpsWebapp/main/owasp-dependency-check.sh"'
@@ -30,7 +30,7 @@ pipeline {
             }
         }  
 
-        stage ('SAST') {
+        stage('SAST') {
             steps {
                 sh '''
                 echo "Pulling Semgrep Docker Image from Docker Hub"
@@ -43,13 +43,13 @@ pipeline {
             }
         }
 
-        stage ('Build') {
+        stage('Build') {
             steps {
                 sh 'mvn clean package'
             }
         }
 
-        stage ('Deploy-To-Tomcat') {
+        stage('Deploy-To-Tomcat') {
             steps {
                 sshagent(['tomcat']) {
                     sh 'scp -o StrictHostKeyChecking=no target/*.war ubuntu@18.197.52.92:/home/ubuntu/prod/apache-tomcat-10.1.28/webapps/webapp.war'
@@ -57,23 +57,39 @@ pipeline {
             }
         }
 
-        stage ('DAST') {
+        stage('DAST') {
             steps {
                 sh '''
                 echo "Pulling OWASP ZAP Docker Image from Docker Hub"
                 docker pull zaproxy/zap-stable
                 
                 echo "Starting OWASP ZAP DAST scan"
-                docker run -u root -v ${WORKSPACE}:/zap/wrk:rw -t zaproxy/zap-stable zap-baseline.py -t http://18.197.52.92:8080/webapp/ -x zap_report.xml || true
+                docker run -u root -v ${WORKSPACE}:/zap/wrk:rw -t zaproxy/zap-stable zap-baseline.py -t http://18.197.52.92:8080/webapp/ -r zap_report.html || true
                 echo "ZAP DAST scan completed"
                 '''
             }
         }
 
-        stage ('Archive Report') {
+        stage('DefectDojoPublisher') {
+            steps {
+                withCredentials([string(credentialsId: 'defectdojoapikey', variable: 'API_KEY')]) {
+                    defectDojoPublisher(
+                        artifact: 'zap_report.xml',
+                        productName: 'DevSecOpsWebApp',
+                        scanType: 'Dependency Check Scan',
+                        engagementName: 'DevSecOpsEngagement',
+                        defectDojoCredentialsId: API_KEY,
+                        sourceCodeUri: 'https://github.com/cybermanish2023/DevSecOpsWebapp.git',
+                        branchTag: 'main'
+                    )
+                }
+            }
+        }
+
+        stage('Archive Report') {
             steps {
                 sh 'ls -la $(pwd)'
-                archiveArtifacts artifacts: 'zap_report.xml', fingerprint: true
+                archiveArtifacts artifacts: 'zap_report.html', fingerprint: true
             }
         }
     }
