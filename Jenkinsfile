@@ -79,7 +79,6 @@ pipeline {
                         scanType: 'Dependency Check Scan',
                         engagementName: 'DevSecOpsEngagement',
                         defectDojoCredentialsId: API_KEY,
-                        sourceCodeUri: 'https://github.com/cybermanish2023/DevSecOpsWebapp.git',
                         branchTag: 'main'
                     )
                 }
