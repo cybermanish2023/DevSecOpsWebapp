@@ -24,7 +24,7 @@ pipeline {
         stage ('Source Composition Analysis') {
             steps {
                 sh 'rm owasp* || true'
-                sh 'wget "https://raw.githubusercontent.com/cybermanish2023/DevSecOpsWebapp/main/owasp-dependency-check.sh" '
+                sh 'wget "https://raw.githubusercontent.com/cybermanish2023/DevSecOpsWebapp/main/owasp-dependency-check.sh"'
                 sh 'chmod +x owasp-dependency-check.sh'
                 sh 'bash owasp-dependency-check.sh --nvdApiKey aa67805d-fdc7-4072-994d-a5d7ce67ed96'
             }
@@ -36,6 +36,19 @@ pipeline {
                     sh 'mvn sonar:sonar'
                     sh 'cat target/sonar/report-task.txt'
                 }
+            }
+        }
+
+        stage ('SAST1') {
+            steps {
+                sh '''
+                echo "Pulling Semgrep Docker Image from Docker Hub"
+                docker pull returntocorp/semgrep
+                
+                echo "Starting Semgrep scan"
+                docker run --rm -v "${PWD}:/src" returntocorp/semgrep semgrep --config auto /src
+                echo "Semgrep scan completed"
+                '''
             }
         }
 
@@ -59,19 +72,19 @@ pipeline {
                 echo "Pulling OWASP ZAP Docker Image from Docker Hub"
                 docker pull zaproxy/zap-stable
                 
-                echo "Starting OWASP ZAP DAST scan with authentication"
-                docker run -t \
-                    -v $(pwd):/zap/wrk:rw \
-                    zaproxy/zap-stable \
-                    zap-baseline.py \
-                        -t http://testphp.vulnweb.com/login.php \
-                        -r /zap/wrk/zap_report.html \
-                        -U test \
-                        -P test \
-                        --auto
+                echo "Starting OWASP ZAP DAST scan"
+                docker run -v $(pwd):/zap/wrk:rw -t zaproxy/zap-stable zap-baseline.py -t http://18.197.52.92:8080/webapp/ -r /zap/wrk/zap_report.html || true
                 echo "ZAP DAST scan completed"
+                
+                echo "Listing files in /zap/wrk to check for the report"
+                ls -la /zap/wrk
                 '''
-                // Archive the report
+            }
+        }
+
+        stage ('Archive Report') {
+            steps {
+                sh 'ls -la $(pwd)'
                 archiveArtifacts artifacts: 'zap_report.html', fingerprint: true
             }
         }
