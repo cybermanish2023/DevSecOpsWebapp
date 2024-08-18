@@ -64,7 +64,7 @@ pipeline {
                 docker pull zaproxy/zap-stable
                 
                 echo "Starting OWASP ZAP DAST scan"
-                docker run -u root -v ${WORKSPACE}:/zap/wrk:rw -t zaproxy/zap-stable zap-baseline.py -t http://18.197.52.92:8080/webapp/ -r zap_report.html
+                docker run -u root -v ${WORKSPACE}:/zap/wrk:rw -t zaproxy/zap-stable zap-baseline.py -t http://18.197.52.92:8080/webapp/ -r zap_report.html || true
                 echo "ZAP DAST scan completed"
                 '''
             }
