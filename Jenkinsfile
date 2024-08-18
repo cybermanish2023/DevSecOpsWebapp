@@ -72,7 +72,7 @@ pipeline {
 
         stage('DefectDojoPublisher') {
             steps {
-                withCredentials([string(credentialsId: 'defectdojoapikey', variable: 'API_KEY')]) {
+                withCredentials([string(credentialsId: 'DefectDojoApiKey', variable: 'API_KEY')]) {
                     defectDojoPublisher(
                         artifact: 'zap_report.xml',
                         productName: 'DevSecOpsWebApp',
