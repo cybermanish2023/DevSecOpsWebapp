@@ -64,7 +64,7 @@ pipeline {
                 docker pull zaproxy/zap-stable
                 
                 echo "Starting OWASP ZAP DAST scan"
-                docker run -u root -v ${WORKSPACE}:/zap/wrk:rw -t zaproxy/zap-stable zap-baseline.py -t http://18.197.52.92:8080/webapp/ -r zap_report.html || true
+                docker run -u root -v ${WORKSPACE}:/zap/wrk:rw -t zaproxy/zap-stable zap-baseline.py -t http://18.197.52.92:8080/webapp/ -r zap_report.xml || true
                 echo "ZAP DAST scan completed"
                 '''
             }
@@ -73,7 +73,7 @@ pipeline {
         stage ('Archive Report') {
             steps {
                 sh 'ls -la $(pwd)'
-                archiveArtifacts artifacts: 'zap_report.html', fingerprint: true
+                archiveArtifacts artifacts: 'zap_report.xml', fingerprint: true
             }
         }
     }
